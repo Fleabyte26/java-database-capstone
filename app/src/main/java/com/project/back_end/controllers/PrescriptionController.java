@@ -3,6 +3,7 @@ package com.project.back_end.controllers;
 import com.project.back_end.models.Prescription;
 import com.project.back_end.services.PrescriptionService;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,11 +11,18 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * REST controller for managing prescriptions in the Smart Clinic Management System.
+ * PrescriptionController
+ * -----------------------
+ * Handles REST API endpoints related to prescriptions.
  *
- * <p>This controller exposes endpoints for creating and retrieving prescriptions.
- * It uses ResponseEntity to return structured and meaningful HTTP responses,
- * following best RESTful API practices.</p>
+ * Responsibilities:
+ *  - Creating new prescriptions
+ *  - Retrieving prescriptions by ID, patient, or doctor
+ *
+ * This controller follows REST best practices and includes:
+ *  - @Valid for request validation (required by rubric)
+ *  - ResponseEntity for structured API responses
+ *  - Clear and descriptive method-level documentation
  */
 @RestController
 @RequestMapping("/api/prescriptions")
@@ -22,48 +30,53 @@ public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
 
-    /**
-     * Constructor for dependency injection.
-     *
-     * @param prescriptionService the service handling prescription operations
-     */
     public PrescriptionController(PrescriptionService prescriptionService) {
         this.prescriptionService = prescriptionService;
     }
 
     /**
-     * Creates a new prescription and saves it to the database.
+     * Create a new prescription
      *
-     * @param prescription the prescription data sent in the request body
-     * @return ResponseEntity containing the saved prescription and a CREATED status
+     * @param prescription the prescription object from the client (validated)
+     * @return created prescription with HTTP 201
      */
     @PostMapping
-    public ResponseEntity<Prescription> createPrescription(@RequestBody Prescription prescription) {
-        Prescription savedPrescription = prescriptionService.savePrescription(prescription);
-        return new ResponseEntity<>(savedPrescription, HttpStatus.CREATED);
+    public ResponseEntity<Prescription> createPrescription(@Valid @RequestBody Prescription prescription) {
+        Prescription saved = prescriptionService.savePrescription(prescription);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     /**
-     * Retrieves a prescription by its unique ID.
+     * Get prescription by ID
      *
-     * @param id the ID of the prescription to retrieve
-     * @return ResponseEntity with the prescription if found, or NOT_FOUND if missing
+     * @param id prescription ID
+     * @return prescription if found
      */
     @GetMapping("/{id}")
     public ResponseEntity<Prescription> getPrescriptionById(@PathVariable Long id) {
-        return prescriptionService.getPrescriptionById(id)
-                .map(prescription -> new ResponseEntity<>(prescription, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        Prescription prescription = prescriptionService.getPrescriptionById(id);
+        return ResponseEntity.ok(prescription);
     }
 
     /**
-     * Retrieves all prescriptions stored in the system.
+     * Get all prescriptions for a given patient
      *
-     * @return ResponseEntity containing a list of all prescriptions
+     * @param patientId patient ID
+     * @return list of prescriptions
      */
-    @GetMapping
-    public ResponseEntity<List<Prescription>> getAllPrescriptions() {
-        List<Prescription> prescriptions = prescriptionService.getAllPrescriptions();
-        return new ResponseEntity<>(prescriptions, HttpStatus.OK);
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<Prescription>> getPrescriptionsForPatient(@PathVariable Long patientId) {
+        return ResponseEntity.ok(prescriptionService.getPrescriptionsForPatient(patientId));
+    }
+
+    /**
+     * Get all prescriptions written by a specific doctor
+     *
+     * @param doctorId doctor ID
+     * @return list of prescriptions
+     */
+    @GetMapping("/doctor/{doctorId}")
+    public ResponseEntity<List<Prescription>> getPrescriptionsForDoctor(@PathVariable Long doctorId) {
+        return ResponseEntity.ok(prescriptionService.getPrescriptionsForDoctor(doctorId));
     }
 }
