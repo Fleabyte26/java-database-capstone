@@ -1,50 +1,37 @@
 name: Compile Java Backend
 
-# Trigger workflow on pushes and pull requests
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
-  build-backend:
-    name: Build Backend with Maven
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # -----------------------------
-      # Checkout repository
-      # -----------------------------
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # -----------------------------
-      # Set up Java 17 (Spring Boot requirement)
-      # -----------------------------
-      - name: Set up JDK 17
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'maven'
+          distribution: temurin
+          java-version: 17
 
-      # -----------------------------
-      # Navigate into the backend directory 
-      # Update this path if your backend is in a different folder
-      # -----------------------------
-      - name: Navigate to backend folder
-        run: cd app
-
-      # -----------------------------
-      # Compile using Maven
-      # -----------------------------
-      - name: Compile backend
+      - name: Give Maven wrapper execute permission
+        run: chmod +x mvnw
         working-directory: ./app
-        run: mvn -B -DskipTests clean package
 
-      # -----------------------------
-      # Verify JAR exists (extra best-practice check)
-      # -----------------------------
-      - name: Verify build artifact
-        working-directory: ./app/target
-        run: ls -lah
+      - name: Compile backend using Maven Wrapper
+        run: ./mvnw -q -DskipTests package
+        working-directory: ./app
+
+      - name: Verify JAR was built
+        run: |
+          if [ ! -f ./target/*.jar ]; then
+            echo "JAR build failed!"
+            exit 1
+          fi
+        working-directory: ./app
