@@ -1,35 +1,44 @@
-# ================================
-#   1. Build Stage (Maven)
-# ================================
-FROM maven:3.9.6-eclipse-temurin-17 AS build
+###############################################
+# Stage 1: Build the Spring Boot application
+###############################################
+FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Copy pom.xml and download dependencies (caching step)
+# Copy only pom.xml first for caching dependencies
 COPY pom.xml .
 
-RUN mvn -B -q dependency:go-offline
+# Download all dependencies (cached unless pom.xml changes)
+RUN mvn dependency:go-offline -B
 
-# Copy the application source
+# Copy the full project
 COPY src ./src
 
-# Build the Spring Boot application
-RUN mvn -B -q package -DskipTests
+# Package the application (skip tests for faster builds)
+RUN mvn clean package -DskipTests
 
+###############################################
+# Stage 2: Run the application
+###############################################
+FROM eclipse-temurin:17-jre
 
-# ================================
-#   2. Runtime Stage (JDK)
-# ================================
-FROM eclipse-temurin:17-jdk-alpine
-
+# Set working directory
 WORKDIR /app
 
-# Copy the JAR from the build stage
-COPY --from=build /app/target/*.jar app.jar
+# Copy the packaged JAR from the builder stage
+COPY --from=builder /app/target/*.jar app.jar
 
-# Expose port (change if your app uses different port)
+# Expose the application port
 EXPOSE 8080
 
-# Start the Spring Boot app
+###############################################
+# Health check (recommended best practice)
+###############################################
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+###############################################
+# Run Spring Boot
+###############################################
 ENTRYPOINT ["java", "-jar", "app.jar"]
