@@ -1,29 +1,36 @@
-package com.project.back_end.repo;
+package com.project.back_end.repositories;
 
-public interface PatientRepository {
-    // 1. Extend JpaRepository:
-//    - The repository extends JpaRepository<Patient, Long>, which provides basic CRUD functionality.
-//    - This allows the repository to perform operations like save, delete, update, and find without needing to implement these methods manually.
-//    - JpaRepository also includes features like pagination and sorting.
+import com.project.back_end.models.Patient;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-// Example: public interface PatientRepository extends JpaRepository<Patient, Long> {}
+import java.util.Optional;
 
-// 2. Custom Query Methods:
+/**
+ * Repository interface for accessing and managing Patient data.
+ *
+ * <p>This interface provides CRUD operations through JpaRepository and
+ * includes custom query methods for retrieving patients by email or
+ * phone number, as required by the assignment criteria.</p>
+ */
+@Repository
+public interface PatientRepository extends JpaRepository<Patient, Long> {
 
-//    - **findByEmail**:
-//      - This method retrieves a Patient by their email address.
-//      - Return type: Patient
-//      - Parameters: String email
+    /**
+     * Retrieves a patient by their email address.
+     *
+     * @param email the patient's email
+     * @return an Optional containing the patient if found
+     */
+    Optional<Patient> findByEmail(String email);
 
-//    - **findByEmailOrPhone**:
-//      - This method retrieves a Patient by either their email or phone number, allowing flexibility for the search.
-//      - Return type: Patient
-//      - Parameters: String email, String phone
-
-// 3. @Repository annotation:
-//    - The @Repository annotation marks this interface as a Spring Data JPA repository.
-//    - Spring Data JPA automatically implements this repository, providing the necessary CRUD functionality and custom queries defined in the interface.
-
-
+    /**
+     * Retrieves a patient using either their email address or phone number.
+     *
+     * @param email the patient's email
+     * @param phone the patient's phone number
+     * @return an Optional containing the patient if either field matches
+     */
+    Optional<Patient> findByEmailOrPhoneNumber(String email, String phone);
 }
 
