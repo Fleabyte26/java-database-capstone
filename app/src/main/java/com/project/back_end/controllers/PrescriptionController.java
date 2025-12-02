@@ -1,33 +1,69 @@
 package com.project.back_end.controllers;
 
+import com.project.back_end.models.Prescription;
+import com.project.back_end.services.PrescriptionService;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * REST controller for managing prescriptions in the Smart Clinic Management System.
+ *
+ * <p>This controller exposes endpoints for creating and retrieving prescriptions.
+ * It uses ResponseEntity to return structured and meaningful HTTP responses,
+ * following best RESTful API practices.</p>
+ */
+@RestController
+@RequestMapping("/api/prescriptions")
 public class PrescriptionController {
-    
-// 1. Set Up the Controller Class:
-//    - Annotate the class with `@RestController` to define it as a REST API controller.
-//    - Use `@RequestMapping("${api.path}prescription")` to set the base path for all prescription-related endpoints.
-//    - This controller manages creating and retrieving prescriptions tied to appointments.
 
+    private final PrescriptionService prescriptionService;
 
-// 2. Autowire Dependencies:
-//    - Inject `PrescriptionService` to handle logic related to saving and fetching prescriptions.
-//    - Inject the shared `Service` class for token validation and role-based access control.
-//    - Inject `AppointmentService` to update appointment status after a prescription is issued.
+    /**
+     * Constructor for dependency injection.
+     *
+     * @param prescriptionService the service handling prescription operations
+     */
+    public PrescriptionController(PrescriptionService prescriptionService) {
+        this.prescriptionService = prescriptionService;
+    }
 
+    /**
+     * Creates a new prescription and saves it to the database.
+     *
+     * @param prescription the prescription data sent in the request body
+     * @return ResponseEntity containing the saved prescription and a CREATED status
+     */
+    @PostMapping
+    public ResponseEntity<Prescription> createPrescription(@RequestBody Prescription prescription) {
+        Prescription savedPrescription = prescriptionService.savePrescription(prescription);
+        return new ResponseEntity<>(savedPrescription, HttpStatus.CREATED);
+    }
 
-// 3. Define the `savePrescription` Method:
-//    - Handles HTTP POST requests to save a new prescription for a given appointment.
-//    - Accepts a validated `Prescription` object in the request body and a doctor’s token as a path variable.
-//    - Validates the token for the `"doctor"` role.
-//    - If the token is valid, updates the status of the corresponding appointment to reflect that a prescription has been added.
-//    - Delegates the saving logic to `PrescriptionService` and returns a response indicating success or failure.
+    /**
+     * Retrieves a prescription by its unique ID.
+     *
+     * @param id the ID of the prescription to retrieve
+     * @return ResponseEntity with the prescription if found, or NOT_FOUND if missing
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Prescription> getPrescriptionById(@PathVariable Long id) {
+        return prescriptionService.getPrescriptionById(id)
+                .map(prescription -> new ResponseEntity<>(prescription, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
 
-
-// 4. Define the `getPrescription` Method:
-//    - Handles HTTP GET requests to retrieve a prescription by its associated appointment ID.
-//    - Accepts the appointment ID and a doctor’s token as path variables.
-//    - Validates the token for the `"doctor"` role using the shared service.
-//    - If the token is valid, fetches the prescription using the `PrescriptionService`.
-//    - Returns the prescription details or an appropriate error message if validation fails.
-
-
+    /**
+     * Retrieves all prescriptions stored in the system.
+     *
+     * @return ResponseEntity containing a list of all prescriptions
+     */
+    @GetMapping
+    public ResponseEntity<List<Prescription>> getAllPrescriptions() {
+        List<Prescription> prescriptions = prescriptionService.getAllPrescriptions();
+        return new ResponseEntity<>(prescriptions, HttpStatus.OK);
+    }
 }
